@@ -1,5 +1,2 @@
 *.swp
-bazel-advent-2020
-bazel-bin
-bazel-out
-bazel-testlogs
+bazel-*
