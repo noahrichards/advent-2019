@@ -27,28 +27,38 @@ std::vector<Vector> GetPathFromFile(std::ifstream& file) {
   return path;
 }
 
-// Traces the given path and returns the manhattan distance of the first time
-// the path crosses |cross_marker|.
+struct Pos {
+  int x;
+  int y;
+};
+
+Pos Step(Pos pos, std::tuple<int, int> step) {
+  auto [x_step, y_step] = step;
+  return {pos.x + x_step, pos.y + y_step};
+}
+
+// Walks the given path and calls visit with x, y, and current path length.
 void WalkPath(Grid& grid, std::vector<Vector> path, int origin_x, int origin_y,
-              std::function<void(int, int)> visit) {
-  int y = origin_y;
-  int x = origin_x;
+              std::function<void(int, int, int)> visit) {
+  int path_length = 0;
 
-#define WALK(update_action)                 \
-  for (int i = 0; i < vec.magnitude; ++i) { \
-    visit(x, y);                            \
-    update_action;                          \
-  }
-
+  Pos pos{origin_x, origin_y};
+  std::tuple<int, int> step;
   for (auto vec : path) {
     if (vec.dir == 'U') {
-      WALK(++y);
+      step = {0, 1};
     } else if (vec.dir == 'D') {
-      WALK(--y);
+      step = {0, -1};
     } else if (vec.dir == 'L') {
-      WALK(--x);
+      step = {-1, 0};
     } else {
-      WALK(++x);
+      step = {1, 0};
+    }
+
+    // Walk the vector, visiting each element.
+    for (int i = 0; i < vec.magnitude; ++i) {
+      visit(pos.x, pos.y, path_length++);
+      pos = Step(pos, step);
     }
   }
 }
@@ -72,14 +82,13 @@ int main(int argc, char** argv) {
   // Get the first path and trace it by writing the distance walked so far.
   std::vector<Vector> first_path = GetPathFromFile(file);
   int path_length = 0;
-  WalkPath(grid, first_path, origin, origin, [&](int x, int y) {
-    int& loc = grid[y][x];
-    if (loc == -1) {
-      loc = path_length++;
-    } else {
-      ++path_length;
-    }
-  });
+  WalkPath(grid, first_path, origin, origin,
+           [&](int x, int y, int path_length) {
+             int& loc = grid[y][x];
+             if (loc == -1) {
+               loc = path_length;
+             }
+           });
 
   // Rewrite the origin so we don't accidentally intersect with it.
   grid[origin][origin] = -1;
@@ -90,16 +99,15 @@ int main(int argc, char** argv) {
   int manhattan_distance = INT_MAX;
   int walk_distance = INT_MAX;
   path_length = 0;
-  WalkPath(grid, second_path, origin, origin, [&](int x, int y) {
-    int& loc = grid[y][x];
-    if (loc != -1) {
-      manhattan_distance = std::min(
-          manhattan_distance, std::abs(x - origin) + std::abs(y - origin));
-      walk_distance = std::min(walk_distance, loc + path_length++);
-    } else {
-      ++path_length;
-    }
-  });
+  WalkPath(
+      grid, second_path, origin, origin, [&](int x, int y, int path_length) {
+        int& loc = grid[y][x];
+        if (loc != -1) {
+          manhattan_distance = std::min(
+              manhattan_distance, std::abs(x - origin) + std::abs(y - origin));
+          walk_distance = std::min(walk_distance, loc + path_length);
+        }
+      });
 
   LOG(INFO) << "PART 1: " << manhattan_distance;
   LOG(INFO) << "PART 2: " << walk_distance;
