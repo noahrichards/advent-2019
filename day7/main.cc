@@ -102,7 +102,7 @@ struct Machine {
   int input_loc = 0;
 };
 
-enum HaltReason { kWaitingForInput, KHaltInstruction };
+enum HaltReason { kWaitingForInput, kHaltInstruction };
 
 HaltReason Execute(Machine& machine) {
   CHECK(machine.input);
@@ -183,7 +183,7 @@ int RunAmplifier(std::vector<int> storage, int phase_setting,
                  int input_signal) {
   std::vector<int> input = {phase_setting, input_signal};
   Machine machine = {storage, &input};
-  CHECK(Execute({storage, &input}) == kHaltInstruction);
+  CHECK(Execute(machine) == kHaltInstruction);
   CHECK(machine.output.size() == 1);
   return machine.output[0];
 }
@@ -243,14 +243,18 @@ int main(int argc, char** argv) {
       // Hook up the outputs of each machine to the inputs of the previous.
       for (int i = 0; i < 4; ++i) machines[i + 1].input = &machines[i].output;
       machines[0].input = &machines[4].output;
-      // Write the phase settings to the inputs.
-      for (int i = 0; i < 5; ++i) machines[i].input->push_back(phases[i]);
+      // Setup the machines.
+      for (int i = 0; i < 5; ++i) {
+        machines[i].storage = storage;
+        machines[i].input->push_back(phases[i]);
+      }
       // Write 0 to the initial machines input.
       machines[0].input->push_back(0);
 
       // Now: execute the machines until they all halt.
+      bool any_waiting_for_input;
       do {
-        bool any_waiting_for_input = false;
+        any_waiting_for_input = false;
         for (int i = 0; i < 5; ++i) {
           if (Execute(machines[i]) == kWaitingForInput) {
             any_waiting_for_input = true;
