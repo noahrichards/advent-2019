@@ -1,5 +1,5 @@
 cc_binary(
-    name = "day7",
+    name = "day9",
     srcs = ["main.cc"],
     deps = [
         "//intcode",

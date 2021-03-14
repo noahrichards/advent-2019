@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
@@ -21,11 +22,11 @@ int main(int argc, char** argv) {
 
   Memory memory = ReadMemoryFromFile(file);
 
-  // Part 1: use 1 as input, print output[output.size - 1].
-  LOG(INFO) << "PART 1 OUTPUT";
+  // Part 1: run with input 1.
+  LOG(INFO) << "PART 1: ";
   RunMachine(memory, 1);
-
-  LOG(INFO) << "PART 2 OUTPUT";
-  RunMachine(memory, 5);
+  // Part 2: run with input 2.
+  LOG(INFO) << "PART 2: ";
+  RunMachine(memory, 2);
   return 0;
 }
